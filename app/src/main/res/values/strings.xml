@@ -1,0 +1,51 @@
+<resources>
+	<string name="app_name">Pi\'s Remote</string>
+	<string name="app_version">Version %s</string>
+	<string name="app_copyright" translatable="false">\u00A9 2019 SEA9.ORG</string>
+	<string name="app_license">
+		Pi\'s Remote is a free software, and is released under the GNU GPLv2 license.\n
+		This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	</string>
+	<string name="app_author" translatable="false">paul@sea9.org</string>
+	<string name="app_host">sea9.org</string>
+	<string name="app_pathPrefix">/PiRemote</string>
+	<string name="app_scheme">http</string>
+	<string name="action_settings">Settings</string>
+	<string name="action_about">About</string>
+	<string name="hint_host">Pi\'s Name / URL</string>
+	<string name="hint_address">IP Address</string>
+	<string name="hint_login">Login name</string>
+	<string name="hint_password">Password</string>
+	<string name="hint_path">Current path</string>
+	<string name="hint_hardware">Hardware status</string>
+	<string name="hint_command">Command</string>
+	<string name="content_clear">Clear text</string>
+	<string name="content_save">Save settings</string>
+	<string name="content_nav">Navigation</string>
+	<string name="content_look">Look-up</string>
+	<string name="label_okay">Okay</string>
+	<string name="label_cancel">Cancel</string>
+	<string name="label_save">Save changes</string>
+	<string name="label_quick">Do not search for host at start-up</string>
+	<string name="message_empty">Please specify details related to this host</string>
+	<string name="message_new">Host is new</string>
+	<string name="message_unknown">Unsupported action</string>
+	<string name="message_record">Host record not found</string>
+	<string name="message_power">Shutdown \'%s\'</string>
+	<string name="message_ipaddr">%s is not a valid IP address</string>
+	<string name="message_netinit1">Local subnet:</string>
+	<string name="message_netinit2">\t %d host%s found</string>
+	<string name="message_current">Connected to host \'%s\'</string>
+	<string name="message_stored">Switching to stored host \'%s\'</string>
+	<string name="message_noinfo">Hardware status\nnot\navailable</string>
+	<string name="message_nohost">No host connected\n</string>
+	<string name="message_connect">Connect to host \'%s\' failed</string>
+	<string name="message_trying">Trying to connect to \'%s\'</string>
+	<string name="message_nottry">No stored host to attempt connecting to…</string>
+	<string name="message_error">Connecting to host \'%s\': %s</string>
+	<string name="message_nowifi">Wifi network not ready…</string>
+	<string name="message_timeout">Connection timed out</string>
+	<string name="message_authfail">Authentication failed</string>
+	<string name="message_savefail">Update setting failed</string>
+</resources>

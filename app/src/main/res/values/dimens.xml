@@ -1,0 +1,12 @@
+<resources>
+	<dimen name="dialog_minWidth">290dp</dimen>
+	<dimen name="fab_margin">16dp</dimen>
+	<dimen name="margin_normal">8dp</dimen>
+	<dimen name="margin_narrow">4dp</dimen>
+	<dimen name="button_size">63dp</dimen>
+	<dimen name="img_padding">14dp</dimen>
+	<dimen name="text_title">12pt</dimen>
+	<dimen name="text_normal">10pt</dimen>
+	<dimen name="text_medium">8pt</dimen>
+	<dimen name="text_small">7pt</dimen>
+</resources>
