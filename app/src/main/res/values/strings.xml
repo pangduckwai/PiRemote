@@ -27,7 +27,7 @@
 	<string name="label_okay">Okay</string>
 	<string name="label_cancel">Cancel</string>
 	<string name="label_save">Save changes</string>
-	<string name="label_quick">Do not search for host at start-up</string>
+	<string name="label_quick">Do not attempt to connect to host during startup</string>
 	<string name="message_empty">Please specify details related to this host</string>
 	<string name="message_new">Host is new</string>
 	<string name="message_unknown">Unsupported action</string>

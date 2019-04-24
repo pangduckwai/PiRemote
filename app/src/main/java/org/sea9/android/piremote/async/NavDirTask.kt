@@ -49,19 +49,15 @@ class NavDirTask(private val caller: MainContext) {
 				else
 					x
 			})
-
-			caller.writeConsole(dirList.joinToString("/$NEWLINE") + "/$NEWLINE")
-			caller.callback?.refreshUi()
 		}
 	}
 
 	fun navigate(host: HostRecord?, cd: String?) {
 		AsyncNavTask(
 			caller,
-			if ((currentPath != null) && (cd != null) && (cd.startsWith(RunCmdTask.COMMAND_CD)))
-				"cd \"$currentPath\"; $cd; pwd; $COMMAND_DIR"
-			else
-				"pwd; $COMMAND_DIR",
+			(currentPath?.let {"cd \"$currentPath\"; "} ?: "") +
+			(cd?.let {"$cd; "} ?: "") +
+			"pwd; $COMMAND_DIR",
 			false
 		).executeOnExecutor(
 			AsyncTask.THREAD_POOL_EXECUTOR,
@@ -76,6 +72,8 @@ class NavDirTask(private val caller: MainContext) {
 		override fun onPostExecute(result: Response) {
 			if ((result.status == Status.OKAY) && (!result.message.isNullOrBlank())) {
 				caller.navigator.updateDirList(result.message)
+				caller.writeConsole(result.message.substring(result.message.indexOf("./\n")+3))
+				caller.callback?.refreshUi()
 			}
 			caller.callback?.isBusy(false)
 		}
@@ -95,7 +93,9 @@ class NavDirTask(private val caller: MainContext) {
 		}
 		override fun onPostExecute(result: Response) {
 			if ((result.status == Status.OKAY) && (!result.message.isNullOrBlank())) {
-				caller.navigator.updateDirList(result.message)
+				caller.navigator.updateDirList(result.message.substring(result.message.indexOf("./\n")+3))
+				caller.writeConsole(result.message)
+				caller.callback?.refreshUi()
 			}
 			caller.callback?.isBusy(false)
 		}

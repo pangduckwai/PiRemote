@@ -74,12 +74,12 @@ class MainContext: Fragment(), RetainedContext {
 	 */
 	override var changesTracker: ChangesTracker = ChangesTracker()
 
-	private var quickStartEnabled: Boolean = false
+	private var quickStartEnabled: Boolean = true
 
 	private fun populateConfig() {
 		context?.let {
 			it.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { pref ->
-				quickStartEnabled = pref.getBoolean(MainActivity.KEY_QUICK, false)
+				quickStartEnabled = pref.getBoolean(MainActivity.KEY_QUICK, true)
 			}
 		}
 	}
