@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 		const val TAG = "pi.main"
 		const val KEY_HOST = "pi.host"
 		const val KEY_QUICK = "pi.quick"
+		const val KEY_PHRASE = "pi.passphrase"
 		const val EMPTY = ""
 		const val MSG_DIALOG_NOTIFY = 0
 		const val MSG_NO_WIFI = 1

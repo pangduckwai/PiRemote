@@ -2,6 +2,7 @@
 <LinearLayout
 		xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:card_view="http://schemas.android.com/apk/res-auto"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:descendantFocusability="beforeDescendants"
@@ -21,10 +22,8 @@
 			card_view:cardBackgroundColor="@color/colorGrey">
 
 		<android.support.constraint.ConstraintLayout
-				xmlns:app="http://schemas.android.com/apk/res-auto"
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:layout_marginBottom="@dimen/fab_margin">
+				android:layout_height="wrap_content">
 
 			<AutoCompleteTextView
 					android:id="@+id/host"
@@ -192,16 +191,40 @@
 			android:layout_marginTop="@dimen/margin_narrow"
 			card_view:cardCornerRadius="@dimen/margin_narrow"
 			card_view:cardBackgroundColor="@color/colorGrey">
-		<CheckBox
-				android:id="@+id/quick_start"
+
+		<android.support.constraint.ConstraintLayout
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:layout_marginBottom="@dimen/fab_margin"
-				android:layout_marginEnd="@dimen/fab_margin"
-				android:layout_marginStart="@dimen/fab_margin"
-				android:layout_marginTop="@dimen/fab_margin"
-				android:text="@string/label_quick"
-				android:textSize="@dimen/text_medium"
-				android:layoutDirection="rtl"/>
+				android:layout_height="wrap_content">
+
+			<CheckBox
+					android:id="@+id/quick_start"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:layout_marginBottom="@dimen/fab_margin"
+					android:layout_marginEnd="@dimen/fab_margin"
+					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginTop="@dimen/fab_margin"
+					android:text="@string/label_quick"
+					android:textSize="@dimen/text_medium"
+					android:layoutDirection="rtl"
+					app:layout_constraintEnd_toEndOf="parent"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toTopOf="parent"/>
+
+			<CheckBox
+					android:id="@+id/passphrase"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:layout_marginBottom="@dimen/fab_margin"
+					android:layout_marginEnd="@dimen/fab_margin"
+					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginTop="@dimen/fab_margin"
+					android:text="@string/label_passphrase"
+					android:textSize="@dimen/text_medium"
+					android:layoutDirection="rtl"
+					app:layout_constraintEnd_toEndOf="parent"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/quick_start"/>
+		</android.support.constraint.ConstraintLayout>
 	</android.support.v7.widget.CardView>
 </LinearLayout>

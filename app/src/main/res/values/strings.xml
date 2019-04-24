@@ -16,7 +16,8 @@
 	<string name="hint_host">Pi\'s Name / URL</string>
 	<string name="hint_address">IP Address</string>
 	<string name="hint_login">Login name</string>
-	<string name="hint_password">Password</string>
+	<string name="hint_password">Host Password</string>
+	<string name="hint_passphrase">Encryption Passphrase</string>
 	<string name="hint_path">Current path</string>
 	<string name="hint_hardware">Hardware status</string>
 	<string name="hint_command">Command</string>
@@ -28,6 +29,7 @@
 	<string name="label_cancel">Cancel</string>
 	<string name="label_save">Save changes</string>
 	<string name="label_quick">Do not attempt to connect to host during startup</string>
+	<string name="label_passphrase">Supply an encryption passphrase for host credentials</string>
 	<string name="message_empty">Please specify details related to this host</string>
 	<string name="message_new">Host is new</string>
 	<string name="message_unknown">Unsupported action</string>
