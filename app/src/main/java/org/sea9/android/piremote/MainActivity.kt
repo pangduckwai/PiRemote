@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 		const val TAG = "pi.main"
 		const val KEY_HOST = "pi.host"
 		const val KEY_QUICK = "pi.quick"
-		const val KEY_PHRASE = "pi.passphrase"
 		const val EMPTY = ""
 		const val MSG_DIALOG_NOTIFY = 0
 		const val MSG_NO_WIFI = 1
@@ -161,6 +160,10 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		return when (item.itemId) {
+			R.id.action_clear -> {
+				Log.w(TAG, "Clear command history!!!") //TODO add implementation!
+				true
+			}
 			R.id.action_about -> {
 				AboutDialog.getInstance().show(supportFragmentManager, AboutDialog.TAG)
 				true

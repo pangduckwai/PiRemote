@@ -211,20 +211,6 @@
 					app:layout_constraintStart_toStartOf="parent"
 					app:layout_constraintTop_toTopOf="parent"/>
 
-			<CheckBox
-					android:id="@+id/passphrase"
-					android:layout_width="match_parent"
-					android:layout_height="wrap_content"
-					android:layout_marginBottom="@dimen/fab_margin"
-					android:layout_marginEnd="@dimen/fab_margin"
-					android:layout_marginStart="@dimen/fab_margin"
-					android:layout_marginTop="@dimen/fab_margin"
-					android:text="@string/label_passphrase"
-					android:textSize="@dimen/text_medium"
-					android:layoutDirection="rtl"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@+id/quick_start"/>
 		</android.support.constraint.ConstraintLayout>
 	</android.support.v7.widget.CardView>
 </LinearLayout>

@@ -76,20 +76,16 @@ class MainContext: Fragment(), RetainedContext {
 
 	private var quickStartEnabled: Boolean = true
 
-	private var useOwnPassphrase: Boolean = false
-
 	private fun populateConfig() {
 		context?.let {
 			it.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { pref ->
 				quickStartEnabled = pref.getBoolean(MainActivity.KEY_QUICK, true)
-				useOwnPassphrase = pref.getBoolean(MainActivity.KEY_PHRASE, false)
 			}
 		}
 	}
 	fun readConfig(): Bundle {
 		val bundle = Bundle()
 		bundle.putBoolean(MainActivity.KEY_QUICK, quickStartEnabled)
-		bundle.putBoolean(MainActivity.KEY_PHRASE, useOwnPassphrase)
 		return bundle
 	}
 	fun updateConfig(config: Bundle) {
@@ -98,21 +94,15 @@ class MainContext: Fragment(), RetainedContext {
 		else
 			null
 
-		val passphrase = if (config.containsKey(MainActivity.KEY_PHRASE))
-			config.getBoolean(MainActivity.KEY_PHRASE)
-		else null
-
-		if ((quickStart != null) || (passphrase != null)) {
+		if (quickStart != null) {
 			context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { prop ->
 				with(prop.edit()) {
-					if (quickStart != null) putBoolean(MainActivity.KEY_QUICK, quickStart)
-					if (passphrase != null) putBoolean(MainActivity.KEY_PHRASE, passphrase)
+					putBoolean(MainActivity.KEY_QUICK, quickStart)
 					apply()
 				}
 			}
 		}
 		quickStartEnabled = quickStart ?: true
-		useOwnPassphrase = passphrase ?: false
 	}
 
 	/*=================
