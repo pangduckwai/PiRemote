@@ -27,7 +27,6 @@ class DbInstrumentedTest {
 	companion object {
 		private lateinit var context: Context
 		private lateinit var helper: DbHelper
-		private val secretKey = "abcd1234".toCharArray()
 		private var rowCount = 0
 
 		@BeforeClass
@@ -66,10 +65,10 @@ class DbInstrumentedTest {
 				}
 			}
 
-			DbContract.Host.add(helper, secretKey, "localhost", 0, "paul", "passw0rd".toCharArray())
-			DbContract.Host.add(helper, secretKey, "127.0.0.1", 1, "john", "qwerasdf".toCharArray())
-			DbContract.Host.add(helper, secretKey, "192.168.1.1", 2, "pete", "1qaz2wsx".toCharArray())
-			DbContract.Host.add(helper, secretKey, "192.168.256.254", 3, "bill", "12345678".toCharArray())
+			DbContract.Host.add(helper, "localhost", 0, "paul", "passw0rd".toByteArray())
+			DbContract.Host.add(helper, "127.0.0.1", 1, "john", "qwerasdf".toByteArray())
+			DbContract.Host.add(helper, "192.168.1.1", 2, "pete", "1qaz2wsx".toByteArray())
+			DbContract.Host.add(helper, "192.168.256.254", 3, "bill", "12345678".toByteArray())
 			rowCount = DatabaseUtils.queryNumEntries(helper.readableDatabase, "Host").toInt()
 		}
 	}
@@ -117,8 +116,8 @@ class DbInstrumentedTest {
 		val list = DbContract.Host.list(helper)
 		var found = false
 		list.forEach {
-			val p = DbContract.Host.get(helper, secretKey, it.host, true)
-			val q = DbContract.Host.get(helper, secretKey, it.host, false)
+			val p = DbContract.Host.getKey(helper, it.host)
+			val q = DbContract.Host.getKey(helper, it.host)
 			Log.w("pi.itest_get", "$it - ${p?.joinToString("")} / ${q?.joinToString("")}")
 			if (it.host == "localhost") found = true
 		}
@@ -127,7 +126,7 @@ class DbInstrumentedTest {
 
 	@Test
 	fun testModify() {
-		val ret = DbContract.Host.modify(helper, secretKey, "192.168.1.1", 999, "mary", "qwer1234".toCharArray())
+		val ret = DbContract.Host.modify(helper, "192.168.1.1", 999, "mary", "qwer1234".toByteArray())
 		assertTrue(ret == 1)
 	}
 
@@ -141,6 +140,6 @@ class DbInstrumentedTest {
 
 	@Test(expected = SQLException::class)
 	fun testAdd() {
-		DbContract.Host.add(helper, secretKey, "localhost", 998, "eric", "passw0rd".toCharArray())
+		DbContract.Host.add(helper, "localhost", 998, "eric", "passw0rd".toByteArray())
 	}
 }

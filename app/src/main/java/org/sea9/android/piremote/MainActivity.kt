@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 				if (progressBar.visibility == View.INVISIBLE) { // is not busy
 					retainedContext.hostAdaptor2.getItem(position)?.let {
 						Log.w(TAG, "Spinner Item Selected!!!!!")
-						hostSelected(it.host, it.address)
+						hostSelected(it.host, it.address, it.login)
 					}
 				}
 			}
@@ -298,32 +298,34 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 	/*===========================================================
 	 * @see org.sea9.android.piremote.conf.ConfigDialog.Callback
 	 */
-	override fun selectHost(host: String?): Pair<Int, CharArray>? {
+	override fun selectHost(host: String?): HostRecord? {
 		return (host ?: retainedContext.currentHost?.host)?.let {
-			val address = DbContract.Host.get(retainedContext.dbHelper!!, it)
-			val login = DbContract.Host.get(retainedContext.dbHelper!!, retainedContext.getKey(), it, true)
-			if ((address != null) && (address != 0) && (login != null) && login.isNotEmpty()) {
-				Pair(address, login)
-			} else
-				null
+			return DbContract.Host.get(retainedContext.dbHelper!!, it)
 		} ?: run {
 			null
 		}
 	}
 
 	@SuppressLint("SetTextI18n")
-	override fun saveSettings(host: String, addr: Int?, login: String?, password: CharArray?) {
+	override fun saveSettings(host: String, address: Int?, login: String?, password: CharArray?) {
 		val ret = try {
-			(DbContract.Host.add(retainedContext.dbHelper!!, retainedContext.getKey(), host, addr!!, login!!, password!!) >= 0)
+			(DbContract.Host.add(retainedContext.dbHelper!!, host, address!!, login!!) >= 0)
 		} catch (e: Exception) {
-			(DbContract.Host.modify(retainedContext.dbHelper!!, retainedContext.getKey(), host, addr, login, password) == 1)
+			(DbContract.Host.modify(retainedContext.dbHelper!!, host, address, login) == 1)
 		}
 
 		if (ret) {
-			val address = addr ?: DbContract.Host.get(retainedContext.dbHelper!!, host)
-			if (address != null) {
+			var addr = address
+			var user = login
+			if ((address == null) || (login == null)) {
+				DbContract.Host.get(retainedContext.dbHelper!!, host)?.let {
+					if (address == null) addr = it.address
+					if (login == null) user = it.login
+				}
+			}
+			if ((addr != null) && (user != null)) {
 				retainedContext.populate()
-				hostSelected(host, address)
+				hostSelected(host, addr!!, user!!)
 			} else {
 				doNotify(MSG_DIALOG_NOTIFY, "ERROR! failed to retrieve host record of '$host'", true) //should not reach here...
 			}
@@ -332,8 +334,8 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 		}
 	}
 
-	override fun hostSelected(host: String, addr: Int) {
-		retainedContext.onHostSelected(host, addr)
+	override fun hostSelected(host: String, address: Int, login: String) {
+		retainedContext.onHostSelected(host, address, login)
 		retainedContext.initializer.connect(false)
 	}
 

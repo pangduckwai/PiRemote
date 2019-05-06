@@ -1,8 +1,11 @@
 package org.sea9.android.core
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import org.sea9.android.piremote.BuildConfig
+import java.security.KeyPairGenerator
+import java.security.KeyStore
 
 interface RetainedContext {
 	fun getContext(): Context?
@@ -12,21 +15,4 @@ interface RetainedContext {
 	var dbHelper: DbHelper?
 
 	fun onDbReady()
-
-	@kotlin.Suppress("DEPRECATION")
-	@android.annotation.SuppressLint("PackageManagerGetSignatures")
-	fun getKey(): CharArray {
-		var buffer = CharArray(0)
-		getContext()?.let {
-			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
-			} else {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
-			}
-			signatures.forEach {s ->
-				buffer += s.toChars()
-			}
-		}
-		return buffer
-	}
 }

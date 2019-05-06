@@ -8,7 +8,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.*
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import org.sea9.android.core.ChangesTracker
@@ -22,7 +21,6 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	companion object {
 		const val TAG = "pi.settings"
 		private const val EMPTY = ""
-		private const val DUMMY = "*******"
 
 		fun getInstance() : ConfigDialog {
 			val instance = ConfigDialog()
@@ -34,7 +32,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	private lateinit var textHost: AutoCompleteTextView
 	private lateinit var textAddr: EditText
 	private lateinit var textLogin: EditText
-	private lateinit var textPassword: EditText
+//	private lateinit var textPassword: EditText
 	private lateinit var chkboxFast: CheckBox
 	private lateinit var buttonSave: Button
 
@@ -122,45 +120,44 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			callback?.getChangesTracker()?.clear(textLogin)
 		}
 
-		textPassword = layout.findViewById(R.id.password)
-		callback?.getChangesTracker()?.register(textPassword)
-		textPassword.setOnEditorActionListener { view, actionId, _ ->
-			when (actionId) {
-				EditorInfo.IME_ACTION_DONE -> {
-					view?.clearFocus()
-					(context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-						.hideSoftInputFromWindow(view.windowToken, 0)
-				}
-			}
-			false
-		}
-		textPassword.addTextChangedListener(object : TextWatcher {
-			override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-			override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-			override fun afterTextChanged(s: Editable?) {
-				if (!s.isNullOrBlank()) {
-					buttonSave.isEnabled = true
-					callback?.getChangesTracker()?.change(textPassword)
-				}
-			}
-		})
-		layout.findViewById<ImageButton>(R.id.password_clear).setOnClickListener {
-			textPassword.setText(EMPTY)
-			textPassword.requestFocus()
-			callback?.getChangesTracker()?.clear(textPassword)
-		}
+//		textPassword = layout.findViewById(R.id.password)
+//		callback?.getChangesTracker()?.register(textPassword)
+//		textPassword.setOnEditorActionListener { view, actionId, _ ->
+//			when (actionId) {
+//				EditorInfo.IME_ACTION_DONE -> {
+//					view?.clearFocus()
+//					(context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+//						.hideSoftInputFromWindow(view.windowToken, 0)
+//				}
+//			}
+//			false
+//		}
+//		textPassword.addTextChangedListener(object : TextWatcher {
+//			override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+//			override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+//			override fun afterTextChanged(s: Editable?) {
+//				if (!s.isNullOrBlank()) {
+//					buttonSave.isEnabled = true
+//					callback?.getChangesTracker()?.change(textPassword)
+//				}
+//			}
+//		})
+//		layout.findViewById<ImageButton>(R.id.password_clear).setOnClickListener {
+//			textPassword.setText(EMPTY)
+//			textPassword.requestFocus()
+//			callback?.getChangesTracker()?.clear(textPassword)
+//		}
 
 		buttonSave = layout.findViewById(R.id.save)
 		buttonSave.setOnClickListener {
-			val len = textPassword.text.length
-			if (textHost.text.isEmpty() || textLogin.text.isEmpty() || (len <= 0)) {
+			if (textHost.text.isEmpty() || textLogin.text.isEmpty()) {
 				callback?.doNotify(getString(R.string.message_empty))
 			} else if (!NetworkUtils.isIpAddress(textAddr.text.toString())) {
 				callback?.doNotify(getString(R.string.message_ipaddr, textAddr.text.toString()))
 			} else {
 				val url = textHost.text.toString()
 				val ipa = if (callback?.getChangesTracker()?.isChanged(textAddr) == true) {
-					Log.w(TAG, "Address changed ${textAddr.text}")
+					Log.d(TAG, "Address changed ${textAddr.text}")
 					NetworkUtils.compact(
 						NetworkUtils.parse(
 							textAddr.text.toString()
@@ -169,18 +166,18 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 				} else
 					null
 				val usr = if (callback?.getChangesTracker()?.isChanged(textLogin) == true) {
-					Log.w(TAG, "Login changed")
+					Log.d(TAG, "Login changed")
 					textLogin.text.toString()
 				} else
 					null
-				val pwd = if (callback?.getChangesTracker()?.isChanged(textPassword) == true) {
-					Log.w(TAG, "Password changed")
-					CharArray(len).apply {
-						textPassword.text.getChars(0, len, this, 0)
-					}
-				} else
-					null
-				callback?.saveSettings(url, ipa, usr, pwd)
+//				val pwd = if (callback?.getChangesTracker()?.isChanged(textPassword) == true) {
+//					Log.w(TAG, "Password changed")
+//					CharArray(len).apply {
+//						textPassword.text.getChars(0, len, this, 0)
+//					}
+//				} else
+//					null
+				callback?.saveSettings(url, ipa, usr)
 				dismiss()
 			}
 		}
@@ -199,7 +196,8 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 					val ipa = NetworkUtils.compact(
 						NetworkUtils.parse(textAddr.text.toString())
 					)
-					callback?.hostSelected(url, ipa)
+					val usr = textLogin.text.toString()
+					callback?.hostSelected(url, ipa, usr)
 				}
 				dismiss()
 				true
@@ -227,9 +225,9 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	private fun selectHost(host: String?) {
 		callback?.selectHost(host)?.let {
 			textHost.setText(host)
-			textAddr.setText(NetworkUtils.convert(it.first).hostAddress)
-			textLogin.setText(it.second.joinToString(EMPTY))
-			textPassword.setText(DUMMY)
+			textAddr.setText(NetworkUtils.convert(it.address).hostAddress)
+			textLogin.setText(it.login)
+//			textPassword.setText(DUMMY)
 			buttonSave.isEnabled = false
 			callback?.getChangesTracker()?.clear()
 			if (host != callback?.getCurrent()?.host) callback?.getChangesTracker()?.change(textHost)
@@ -240,7 +238,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 				callback?.doNotify(getString(R.string.message_new))
 				textAddr.setText(EMPTY)
 				textLogin.setText(EMPTY)
-				textPassword.setText(EMPTY)
+//				textPassword.setText(EMPTY)
 				buttonSave.isEnabled = true
 				callback?.getChangesTracker()?.clear()
 			}
@@ -256,9 +254,9 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	 */
 	interface Callback {
 		fun doNotify(message: String?)
-		fun selectHost(host: String?): Pair<Int, CharArray>?
-		fun saveSettings(host: String, addr: Int?, login: String?, password: CharArray?)
-		fun hostSelected(host: String, addr: Int)
+		fun selectHost(host: String?): HostRecord?
+		fun saveSettings(host: String, address: Int?, login: String?)
+		fun hostSelected(host: String, address: Int, login: String)
 		fun getChangesTracker(): ChangesTracker
 		fun getInitializer(): InitConnTask
 		fun getCurrent(): HostRecord?

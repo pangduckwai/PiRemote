@@ -6,7 +6,6 @@ import android.util.Log
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
-import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.piremote.*
 import org.sea9.android.piremote.data.DbContract
 import org.sea9.android.piremote.data.HostRecord
@@ -24,7 +23,6 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 		const val TAG = "pi.exec_remote"
 		const val SUDO = "sudo"
 		const val EXPECTED = "sbin"
-		const val EMPTY = ""
 	}
 
 	override fun doInBackground(vararg params: HostRecord): Response {
@@ -35,32 +33,20 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 				Status.NO_WIFI,
 				params[0].host,
 				params[0].address,
+				params[0].login,
 				command,
 				exception = null
 			)
 		}
 
-		val login = DbContract.Host.get(
-			caller.dbHelper!!,
-			caller.getKey(),
+		val sshKey = DbContract.Host.getKey(caller.dbHelper!!, params[0].host) ?: return Response(
+			Status.NO_DB_RECORD,
 			params[0].host,
-			true
-		)?.joinToString(EMPTY)
-		val password = DbContract.Host.get(
-			caller.dbHelper!!,
-			caller.getKey(),
-			params[0].host,
-			false
+			params[0].address,
+			params[0].login,
+			command,
+			exception = null
 		)
-		if ((login == null) || (password == null)) {
-			return Response(
-				Status.NO_DB_RECORD,
-				params[0].host,
-				params[0].address,
-				command,
-				exception = null
-			)
-		}
 
 		val address = NetworkUtils.convert(params[0].address).hostAddress
 
@@ -73,8 +59,10 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 		try {
 			var ret: String?
 			var xcp: String?
-			JSch().getSession(login, address, 22).also { session ->
-				session.setPassword(KryptoUtils.convert(password))
+			val jsch = JSch().also {
+				it.addIdentity(params[0].host, sshKey, null, null)
+			}
+			jsch.getSession(params[0].login, address, 22).also { session ->
 				session.setConfig(Properties().also { prop ->
 					prop["StrictHostKeyChecking"] = "no"
 				})
@@ -98,10 +86,11 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 					ret = channel.inputStream.let {
 						channel.connect()
 
-						if (isSudo) {
-							out!!.write(KryptoUtils.convert(password + '\n'))
-							out.flush()
-						}
+						//TODO HERE - ask for password when SUDO
+//						if (isSudo) {
+//							out!!.write(KryptoUtils.convert(password + '\n'))
+//							out.flush()
+//						}
 
 						it.bufferedReader().use(BufferedReader::readText)
 					}
@@ -116,6 +105,7 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 					Status.OKAY,
 					params[0].host,
 					params[0].address,
+					params[0].login,
 					command,
 					ret
 				)
@@ -124,6 +114,7 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 					Status.ERROR,
 					params[0].host,
 					params[0].address,
+					params[0].login,
 					command,
 					"$ret\n$xcp"
 				)
@@ -133,6 +124,7 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 			return Response(
 				params[0].host,
 				params[0].address,
+				params[0].login,
 				command,
 				e
 			)
@@ -158,6 +150,7 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 		val status: Status,
 		val hostName: String,
 		val address: Int,
+		val login: String,
 		val command: String?,
 		val message: String?
 	) {
@@ -197,8 +190,8 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 			}
 		}
 
-		constructor(status: Status, hostName: String, address: Int, command: String?, exception: JSchException?):
-				this(status, hostName, address, command,
+		constructor(status: Status, hostName: String, address: Int, login: String, command: String?, exception: JSchException?):
+				this(status, hostName, address, login, command,
 					errorMessage(
 						null,
 						status,
@@ -206,7 +199,7 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 					)
 				)
 
-		constructor(hostName: String, address: Int, command: String?, exception: JSchException):
-				this(findStatus(exception), hostName, address, command, exception)
+		constructor(hostName: String, address: Int, login: String, command: String?, exception: JSchException):
+				this(findStatus(exception), hostName, address, login, command, exception)
 	}
 }

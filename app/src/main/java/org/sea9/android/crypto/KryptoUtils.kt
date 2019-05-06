@@ -1,5 +1,7 @@
 package org.sea9.android.crypto
 
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
 import java.io.*
@@ -8,6 +10,7 @@ import java.security.spec.AlgorithmParameterSpec
 import java.security.spec.InvalidKeySpecException
 import java.security.spec.KeySpec
 import javax.crypto.*
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.PBEParameterSpec
 
@@ -15,8 +18,12 @@ class KryptoUtils {
 	companion object {
 		private const val TAG = "sea9.krypto"
 		private const val DEFAULT_CHARSET = "UTF-8"
+		private const val DEFAULT_HASH_ALGORITHM = "SHA-256"
+
+		/*=================================
+		 * Password-Based Encryption (PBE)
+		 */
 		private const val DEFAULT_PBE_ALGORITHM = "PBEWITHSHA-256AND192BITAES-CBC-BC"
-//		private const val DEFAULT_HASH_ALGORITHM = "SHA-256"
 		private const val DEFAULT_ITERATION = 2048
 		private const val DEFAULT_SALT_LENGTH = 512
 
@@ -52,36 +59,134 @@ class KryptoUtils {
 			}
 		}
 
-//		fun hash(input: ByteArray): ByteArray? {
-//			try {
-//				val digest = MessageDigest.getInstance(DEFAULT_HASH_ALGORITHM)
-//				digest.reset()
-//				return digest.digest(input)
-//			} catch (e: NoSuchAlgorithmException) {
-//				Log.w(TAG, e.message)
-//				return null
-//			}
-//		}
-
 		fun generateSalt(): ByteArray {
 			val buffer = ByteArray(DEFAULT_SALT_LENGTH)
 			SecureRandom().nextBytes(buffer)
 			return buffer
 		}
 
+		/*========================================================
+		 * Symmetric encryption with key kept in Android KeyStore
+		 */
+		private const val TRANSFORMATION = "AES/GCM/NoPadding"
+		private const val KEYSTORE_NAME = "AndroidKeyStore"
+		private const val AUTHENTICATION_TIMEOUT = 300 //5 minutes
+
+		fun generateKey(alias: String, requireAuth: Boolean): Boolean {
+			val keystore = KeyStore.getInstance(KEYSTORE_NAME).also {
+				it.load(null)
+			}
+
+			return if (!keystore.containsAlias(alias)) {
+				KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_NAME).apply {
+					init(
+						KeyGenParameterSpec.Builder(
+								alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+						).also { builder ->
+							builder
+								.setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+								.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+
+							if (requireAuth) {
+								builder
+									.setUserAuthenticationRequired(true)
+									.setUserAuthenticationValidityDurationSeconds(AUTHENTICATION_TIMEOUT)
+							}
+						}.build()
+					)
+					generateKey()
+				}
+				true
+			} else
+				false
+		}
+
+		fun encrypt(message: ByteArray, alias: String): Pair<CharArray, CharArray>? {
+			val keystore = KeyStore.getInstance(KEYSTORE_NAME).also {
+				it.load(null)
+			}
+			if (!keystore.containsAlias(alias)) generateKey(alias, false)
+
+			val cipher = Cipher.getInstance(TRANSFORMATION).apply {
+				init(Cipher.ENCRYPT_MODE, keystore.getKey(alias, null) as SecretKey)
+			}
+
+			val iv = cipher.parameters.getParameterSpec(GCMParameterSpec::class.java)
+
+			val out = ByteArrayOutputStream()
+			val cpo = CipherOutputStream(out, cipher)
+			cpo.write(message)
+			cpo.close()
+
+			val ret1 = convert(encode(out.toByteArray()))
+			val ret2 = convert(encode(iv.iv))
+			return if ((ret1 != null) && (ret2 != null))
+				Pair(ret1, ret2)
+			else
+				null
+		}
+
+		fun decrypt(secret: CharArray, iv: CharArray, alias: String): ByteArray? {
+			val keystore = KeyStore.getInstance(KEYSTORE_NAME).also {
+				it.load(null)
+			}
+			if (!keystore.containsAlias(alias)) return null
+
+			val msg = convert(secret)?.let { decode(it) }
+			val biv = convert(iv)?.let { decode(it) }
+			if ((msg == null) || (biv == null)) return null
+
+			val cipher = Cipher.getInstance(TRANSFORMATION).apply {
+				init(
+					Cipher.DECRYPT_MODE,
+					keystore.getKey(alias, null) as SecretKey,
+					GCMParameterSpec(128, biv)
+				)
+			}
+
+			val out = ByteArrayOutputStream()
+			val cpo = CipherOutputStream(out, cipher)
+			cpo.write(msg)
+			cpo.close()
+			return out.toByteArray()
+		}
+
+		/*=================
+		 * Utility methods
+		 */
+		fun hash(input: ByteArray): ByteArray? {
+			return try {
+				val digest = MessageDigest.getInstance(DEFAULT_HASH_ALGORITHM)
+				digest.reset()
+				digest.digest(input)
+			} catch (e: NoSuchAlgorithmException) {
+				Log.w(TAG, e.message)
+				null
+			}
+		}
+
+		/*
+		 * Base64 encode a byte array.
+		 */
 		fun encode(input: ByteArray): ByteArray {
 			return Base64.encode(input, Base64.NO_WRAP)
 		}
 
+		/*
+		 * Base64 decode a byte array.
+		 */
 		fun decode(input: ByteArray): ByteArray {
 			return Base64.decode(input, Base64.NO_WRAP)
 		}
 
-		fun convert(input: CharArray): ByteArray? {
+		/*
+		 * Convert a char array into a byte array with the given charset.
+		 */
+		fun convert(input: CharArray, charset: String): ByteArray? {
 			var writer: OutputStreamWriter? = null
 			return try {
 				val output = ByteArrayOutputStream()
-				writer = OutputStreamWriter(output, DEFAULT_CHARSET)
+				writer = OutputStreamWriter(output, charset)
 				writer.write(input)
 				writer.flush()
 				output.toByteArray()
@@ -95,12 +200,18 @@ class KryptoUtils {
 				writer?.close()
 			}
 		}
+		fun convert(input: CharArray): ByteArray? {
+			return convert(input, DEFAULT_CHARSET)
+		}
 
-		fun convert(input: ByteArray): CharArray? {
+		/*
+		 * Convert a byte array into a char array with the given charset.
+		 */
+		fun convert(input: ByteArray, charset: String): CharArray? {
 			var reader: InputStreamReader? = null
 			val buffer = CharArray(input.size)
 			return try {
-				reader = InputStreamReader(ByteArrayInputStream(input), DEFAULT_CHARSET)
+				reader = InputStreamReader(ByteArrayInputStream(input), charset)
 				if (reader.read(buffer) < 0) {
 					Log.w(TAG, "End of stream reached")
 					null
@@ -116,6 +227,9 @@ class KryptoUtils {
 			} finally {
 				reader?.close()
 			}
+		}
+		fun convert(input: ByteArray): CharArray? {
+			return convert(input, DEFAULT_CHARSET)
 		}
 	}
 }

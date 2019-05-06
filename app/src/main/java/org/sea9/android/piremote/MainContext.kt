@@ -18,7 +18,6 @@ import org.sea9.android.piremote.data.DbContract
 import org.sea9.android.piremote.data.HostRecord
 import java.net.InetAddress
 
-//TODO - Allow user to choose to supply his/her own password
 class MainContext: Fragment(), RetainedContext {
 	companion object {
 		const val TAG = "pi.retained"
@@ -121,9 +120,7 @@ class MainContext: Fragment(), RetainedContext {
 		context?.let {
 			it.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { pref ->
 				pref.getString(MainActivity.KEY_HOST, null)?.let { value ->
-					currentHost = DbContract.Host.get(dbHelper!!, value)?.let { address ->
-						HostRecord(value, address)
-					}
+					currentHost = DbContract.Host.get(dbHelper!!, value)
 					callback?.refreshUi()
 				}
 			}
@@ -162,14 +159,14 @@ class MainContext: Fragment(), RetainedContext {
 	/*=================
 	 * Utility methods
 	 */
-	fun onHostSelected(host: String, address: Int) {
+	fun onHostSelected(host: String, address: Int, login: String) {
 		context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { prop ->
 			with(prop.edit()) {
 				putString(MainActivity.KEY_HOST, host) // Remember current selected host
 				apply()
 			}
 		}
-		currentHost = HostRecord(host, address)
+		currentHost = HostRecord(host, address, login)
 		callback?.refreshUi()
 	}
 
@@ -197,7 +194,7 @@ class MainContext: Fragment(), RetainedContext {
 	 */
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		Log.d(TAG, "onCreate()")
+		Log.d(TAG, "onCreate() ${context?.packageName}")
 		retainInstance = true
 
 		context?.let {

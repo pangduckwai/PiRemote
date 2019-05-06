@@ -133,37 +133,37 @@
 					app:layout_constraintTop_toTopOf="@+id/login"
 					android:src="@drawable/icon_clear"/>
 
-			<EditText
-					android:id="@+id/password"
-					android:layout_width="0dp"
-					android:layout_height="wrap_content"
-					android:layout_marginBottom="@dimen/margin_narrow"
-					android:layout_marginEnd="@dimen/fab_margin"
-					android:layout_marginStart="@dimen/fab_margin"
-					android:layout_marginTop="@dimen/fab_margin"
-					android:hint="@string/hint_password"
-					android:textSize="@dimen/text_normal"
-					android:maxLength="50"
-					android:selectAllOnFocus="true"
-					android:completionThreshold="0"
-					android:inputType="textPassword"
-					android:imeOptions="actionDone|flagNoExtractUi"
-					android:importantForAutofill="no"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@+id/login"/>
+			<!--<EditText-->
+					<!--android:id="@+id/password"-->
+					<!--android:layout_width="0dp"-->
+					<!--android:layout_height="wrap_content"-->
+					<!--android:layout_marginBottom="@dimen/margin_narrow"-->
+					<!--android:layout_marginEnd="@dimen/fab_margin"-->
+					<!--android:layout_marginStart="@dimen/fab_margin"-->
+					<!--android:layout_marginTop="@dimen/fab_margin"-->
+					<!--android:hint="@string/hint_password"-->
+					<!--android:textSize="@dimen/text_normal"-->
+					<!--android:maxLength="50"-->
+					<!--android:selectAllOnFocus="true"-->
+					<!--android:completionThreshold="0"-->
+					<!--android:inputType="textPassword"-->
+					<!--android:imeOptions="actionDone|flagNoExtractUi"-->
+					<!--android:importantForAutofill="no"-->
+					<!--app:layout_constraintEnd_toEndOf="parent"-->
+					<!--app:layout_constraintStart_toStartOf="parent"-->
+					<!--app:layout_constraintTop_toBottomOf="@+id/login"/>-->
 
-			<ImageButton
-					android:id="@+id/password_clear"
-					android:layout_width="@dimen/text_title"
-					android:layout_height="@dimen/text_title"
-					android:layout_marginEnd="@dimen/margin_narrow"
-					android:contentDescription="@string/content_clear"
-					android:background="?android:attr/selectableItemBackground"
-					app:layout_constraintBottom_toBottomOf="@+id/password"
-					app:layout_constraintEnd_toEndOf="@+id/password"
-					app:layout_constraintTop_toTopOf="@+id/password"
-					android:src="@drawable/icon_clear"/>
+			<!--<ImageButton-->
+					<!--android:id="@+id/password_clear"-->
+					<!--android:layout_width="@dimen/text_title"-->
+					<!--android:layout_height="@dimen/text_title"-->
+					<!--android:layout_marginEnd="@dimen/margin_narrow"-->
+					<!--android:contentDescription="@string/content_clear"-->
+					<!--android:background="?android:attr/selectableItemBackground"-->
+					<!--app:layout_constraintBottom_toBottomOf="@+id/password"-->
+					<!--app:layout_constraintEnd_toEndOf="@+id/password"-->
+					<!--app:layout_constraintTop_toTopOf="@+id/password"-->
+					<!--android:src="@drawable/icon_clear"/>-->
 
 			<Button
 					android:id="@+id/save"
@@ -177,7 +177,7 @@
 					android:drawableStart="@drawable/icon_save"
 					android:enabled="false"
 					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintTop_toBottomOf="@+id/password"/>
+					app:layout_constraintTop_toBottomOf="@+id/login"/>
 		</android.support.constraint.ConstraintLayout>
 	</android.support.v7.widget.CardView>
 

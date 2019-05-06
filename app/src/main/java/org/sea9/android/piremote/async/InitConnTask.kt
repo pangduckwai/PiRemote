@@ -131,7 +131,7 @@ class InitConnTask(private val caller: MainContext) {
 					caller.callback?.refreshUi()
 				}
 
-				val rec = HostRecord(result.hostName, result.address)
+				val rec = HostRecord(result.hostName, result.address, result.login)
 				caller.navigator.navigate(rec, null)
 				AsyncMeasureTask(caller, false)
 					.executeOnExecutor(THREAD_POOL_EXECUTOR, rec)
@@ -167,7 +167,7 @@ class InitConnTask(private val caller: MainContext) {
 		}
 		override fun onPostExecute(result: HostRecord?) {
 			if (result != null) {
-				caller.onHostSelected(result.host, result.address)
+				caller.onHostSelected(result.host, result.address, result.login)
 				caller.writeConsole(caller.context?.getString(R.string.message_stored, result.host))
 				caller.navigator.navigate(result, null)
 				AsyncMeasureTask(caller, false)
