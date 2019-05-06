@@ -1,5 +1,6 @@
 package org.sea9.android.piremote.data
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.provider.BaseColumns
 import org.sea9.android.crypto.KryptoUtils
@@ -99,6 +100,8 @@ object DbContract {
 					put(COL_HOST, url)
 					put(COL_ADDRESS, ipa)
 					put(COL_LOGIN, usr)
+					putNull(COL_PRIV)
+					putNull(COL_INIT)
 					put(COMMON_MODF, Date().time)
 				}
 				return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)
@@ -115,6 +118,8 @@ object DbContract {
 						put(COL_LOGIN, usr)
 						count ++
 					}
+					putNull(COL_PRIV)
+					putNull(COL_INIT)
 					put(COMMON_MODF, Date().time)
 				}
 
@@ -137,6 +142,47 @@ object DbContract {
 					}
 					helper.writableDatabase.update(TABLE, newRow, WHERE_URL, arrayOf(url))
 				} ?: -1
+			}
+
+			@SuppressLint("Recycle")
+			fun registeredList(helper: DbHelper, url: String?): List<HostRecord> {
+				val cursor = if (url == null) {
+					helper.readableDatabase.query(
+						TABLE,
+						COLUMNS,
+						"$COL_PRIV is not null and $COL_PRIV <> ?",
+						arrayOf(EMPTY),
+						null,
+						null,
+						COL_HOST
+					)
+				} else {
+					helper.readableDatabase.query(
+						TABLE,
+						COLUMNS,
+						"$COL_PRIV is not null and $COL_PRIV <> ? and $WHERE_URL",
+						arrayOf(EMPTY, url),
+						null,
+						null,
+						COL_HOST
+					)
+				}
+
+				val result = mutableListOf<HostRecord>()
+				cursor.use {
+					with(it) {
+						while (moveToNext()) {
+							result.add(
+								HostRecord(
+									getString(getColumnIndexOrThrow(COL_HOST)),
+									getInt(getColumnIndexOrThrow(COL_ADDRESS)),
+									getString(getColumnIndexOrThrow(COL_LOGIN))
+								)
+							)
+						}
+					}
+				}
+				return result
 			}
 		}
 	}

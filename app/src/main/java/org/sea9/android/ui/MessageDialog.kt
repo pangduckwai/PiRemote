@@ -58,36 +58,35 @@ class MessageDialog : DialogFragment() {
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 		val builder = AlertDialog.Builder(activity)
 
-		val args = arguments
-		val reference = args?.getInt(REF)
-		builder.setMessage(args?.getString(MSG))
-		args?.getString(TAG)?.let {
+		val reference = arguments?.getInt(REF)
+		builder.setMessage(arguments?.getString(MSG))
+		arguments?.getString(TAG)?.let {
 			builder.setTitle(it)
 		}
-		val neutral = args?.getString(NEU)?.let {
+		val neutral = arguments?.getString(NEU)?.let {
 			it
 		} ?: context?.getString(R.string.label_okay)
-		val positive = args?.getString(POS)?.let {
+		val positive = arguments?.getString(POS)?.let {
 			it
 		} ?: context?.getString(R.string.label_okay)
-		val negative = args?.getString(NEG)?.let {
+		val negative = arguments?.getString(NEG)?.let {
 			it
 		} ?: context?.getString(R.string.label_cancel)
 
 		var hasNeutral = false
 		var hasNegative = false
-		val flag = args?.getInt(FLG)
+		val flag = arguments?.getInt(FLG)
 		flag?.let {
 			if ((it and 1) > 0) {
 				hasNeutral = true
-				builder.setNeutralButton(neutral) { dialog, id -> callback?.neutral(dialog, id, reference!!, args) }
+				builder.setNeutralButton(neutral) { dialog, id -> callback?.neutral(dialog, id, reference!!, arguments) }
 			}
 			if ((it and 2) > 0) {
-				builder.setPositiveButton(positive) { dialog, id -> callback?.positive(dialog, id, reference!!, args) }
+				builder.setPositiveButton(positive) { dialog, id -> callback?.positive(dialog, id, reference!!, arguments) }
 			}
 			if ((it and 4) > 0) {
 				hasNegative = true
-				builder.setNegativeButton(negative) { dialog, id -> callback?.negative(dialog, id, reference!!, args) }
+				builder.setNegativeButton(negative) { dialog, id -> callback?.negative(dialog, id, reference!!, arguments) }
 			}
 		}
 
@@ -96,9 +95,9 @@ class MessageDialog : DialogFragment() {
 			if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.action == KeyEvent.ACTION_UP)) {
 				callback?.let {
 					if (hasNegative)
-						it.negative(null, -1, reference!!, args)
+						it.negative(null, -1, reference!!, arguments)
 					else if (hasNeutral)
-						it.neutral(null, -1, reference!!, args)
+						it.neutral(null, -1, reference!!, arguments)
 				}
 				dismiss()
 				true

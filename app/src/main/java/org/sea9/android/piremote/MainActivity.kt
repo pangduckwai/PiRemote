@@ -25,12 +25,19 @@ import org.sea9.android.piremote.data.DbContract
 import org.sea9.android.piremote.data.HostRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
+import org.sea9.android.ui.SecretDialog
 
-class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Callback, MessageDialog.Callback {
+class MainActivity : AppCompatActivity(),
+		MainContext.Callback,
+		ConfigDialog.Callback,
+		SecretDialog.Callback,
+		MessageDialog.Callback {
 	companion object {
 		const val TAG = "pi.main"
 		const val KEY_HOST = "pi.host"
 		const val KEY_QUICK = "pi.quick"
+		const val KEY_IP = "pi.address"
+		const val KEY_USR = "pi.login"
 		const val EMPTY = ""
 		const val MSG_DIALOG_NOTIFY = 0
 		const val MSG_NO_WIFI = 1
@@ -307,7 +314,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 	}
 
 	@SuppressLint("SetTextI18n")
-	override fun saveSettings(host: String, address: Int?, login: String?, password: CharArray?) {
+	override fun saveSettings(host: String, address: Int?, login: String?) {
 		val ret = try {
 			(DbContract.Host.add(retainedContext.dbHelper!!, host, address!!, login!!) >= 0)
 		} catch (e: Exception) {
@@ -331,6 +338,22 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 			}
 		} else {
 			doNotify(MSG_DIALOG_NOTIFY, getString(R.string.message_savefail), true)
+		}
+	}
+
+	override fun registerHost(host: String, address: Int, login: String): Boolean {
+		return if (DbContract.Host.registeredList(retainedContext.dbHelper!!, host).isNotEmpty()) {
+			false //Already registered
+		} else {
+			val bundle = Bundle()
+			bundle.putString(KEY_HOST, host)
+			bundle.putInt(KEY_IP, address)
+			bundle.putString(KEY_USR, login)
+			SecretDialog.getInstance(
+				getString(R.string.message_login, login, host),
+				bundle
+			).show(supportFragmentManager, SecretDialog.TAG)
+			true
 		}
 	}
 
@@ -368,6 +391,18 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, ConfigDialog.Cal
 	override fun updateConfig(config: Bundle?) {
 		if (config != null) {
 			retainedContext.updateConfig(config)
+		}
+	}
+
+	/*================================================
+	 * @see org.sea9.android.ui.SecretDialog.Callback
+	 */
+	override fun register(secret: CharArray, bundle: Bundle?) {
+		if (bundle != null) {
+			val host = bundle.getString(KEY_HOST)
+			val user = bundle.getString(KEY_USR)
+			if ((host != null) && (user != null))
+				retainedContext.register.register(host, bundle.getInt(KEY_IP), user, secret)
 		}
 	}
 }

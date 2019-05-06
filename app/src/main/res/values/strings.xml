@@ -22,11 +22,13 @@
 	<string name="hint_command">Command</string>
 	<string name="content_clear">Clear text</string>
 	<string name="content_save">Save settings</string>
+	<string name="content_register">Register with the host</string>
 	<string name="content_nav">Navigation</string>
 	<string name="content_look">Look-up</string>
 	<string name="label_okay">Okay</string>
 	<string name="label_cancel">Cancel</string>
 	<string name="label_save">Save changes</string>
+	<string name="label_register">Register</string>
 	<string name="label_quick">Do not attempt to connect to host during startup</string>
 	<string name="message_empty">Please specify details related to this host</string>
 	<string name="message_new">Host is new</string>
@@ -48,4 +50,8 @@
 	<string name="message_timeout">Connection timed out</string>
 	<string name="message_authfail">Authentication failed</string>
 	<string name="message_savefail">Update setting failed</string>
+	<string name="message_register">Host registered successfully</string>
+	<string name="message_regfail">Registering host failed</string>
+	<string name="message_registered">Host already registered</string>
+	<string name="message_login">Register as user \'%s\' to host \'%s\'</string>
 </resources>

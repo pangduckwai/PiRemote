@@ -13,6 +13,7 @@ import org.sea9.android.core.RetainedContext
 import org.sea9.android.piremote.async.RunCmdTask
 import org.sea9.android.piremote.async.InitConnTask
 import org.sea9.android.piremote.async.NavDirTask
+import org.sea9.android.piremote.async.RegisterTask
 import org.sea9.android.piremote.conf.AsyncResponse
 import org.sea9.android.piremote.data.DbContract
 import org.sea9.android.piremote.data.HostRecord
@@ -156,6 +157,9 @@ class MainContext: Fragment(), RetainedContext {
 	lateinit var initializer: InitConnTask
 		private set
 
+	lateinit var register: RegisterTask
+		private set
+
 	/*=================
 	 * Utility methods
 	 */
@@ -202,6 +206,7 @@ class MainContext: Fragment(), RetainedContext {
 			hostAdaptor2 = ArrayAdapter(it, android.R.layout.simple_spinner_item)
 			hostAdaptor2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 		}
+		register = RegisterTask(this)
 		initializer = InitConnTask(this)
 		commands = RunCmdTask(this)
 		navigator = NavDirTask(this)

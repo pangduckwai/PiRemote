@@ -32,9 +32,9 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	private lateinit var textHost: AutoCompleteTextView
 	private lateinit var textAddr: EditText
 	private lateinit var textLogin: EditText
-//	private lateinit var textPassword: EditText
 	private lateinit var chkboxFast: CheckBox
 	private lateinit var buttonSave: Button
+	private lateinit var buttonRgst: Button
 
 	override fun onResponse(response: String?) {
 		textAddr.setText(response)
@@ -92,6 +92,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			override fun afterTextChanged(s: Editable?) {
 				if (!s.isNullOrBlank()) {
 					buttonSave.isEnabled = true
+					buttonRgst.isEnabled = false
 					callback?.getChangesTracker()?.change(textAddr)
 				}
 			}
@@ -110,6 +111,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			override fun afterTextChanged(s: Editable?) {
 				if (!s.isNullOrBlank()) {
 					buttonSave.isEnabled = true
+					buttonRgst.isEnabled = false
 					callback?.getChangesTracker()?.change(textLogin)
 				}
 			}
@@ -182,6 +184,30 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			}
 		}
 
+		buttonRgst = layout.findViewById(R.id.register)
+		buttonRgst.setOnClickListener {
+			if (textHost.text.isEmpty() || textLogin.text.isEmpty()) {
+				callback?.doNotify(getString(R.string.message_empty))
+			} else if (!NetworkUtils.isIpAddress(textAddr.text.toString())) {
+				callback?.doNotify(getString(R.string.message_ipaddr, textAddr.text.toString()))
+			} else {
+				val url = textHost.text.toString()
+				val ipa = NetworkUtils.compact(
+					NetworkUtils.parse(
+						textAddr.text.toString()
+					)
+				)
+				val usr = textLogin.text.toString()
+				callback?.registerHost(url, ipa, usr)?.let {
+					if (!it) {
+						callback?.doNotify(getString(R.string.message_registered))
+					} else {
+						dismiss()
+					}
+				}
+			}
+		}
+
 		chkboxFast = layout.findViewById(R.id.quick_start)
 		chkboxFast.setOnCheckedChangeListener { _, isChecked ->
 			val config = Bundle()
@@ -227,8 +253,8 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			textHost.setText(host)
 			textAddr.setText(NetworkUtils.convert(it.address).hostAddress)
 			textLogin.setText(it.login)
-//			textPassword.setText(DUMMY)
 			buttonSave.isEnabled = false
+			buttonRgst.isEnabled = true
 			callback?.getChangesTracker()?.clear()
 			if (host != callback?.getCurrent()?.host) callback?.getChangesTracker()?.change(textHost)
 			(context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
@@ -238,8 +264,8 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 				callback?.doNotify(getString(R.string.message_new))
 				textAddr.setText(EMPTY)
 				textLogin.setText(EMPTY)
-//				textPassword.setText(EMPTY)
 				buttonSave.isEnabled = true
+				buttonRgst.isEnabled = false
 				callback?.getChangesTracker()?.clear()
 			}
 		}
@@ -256,6 +282,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 		fun doNotify(message: String?)
 		fun selectHost(host: String?): HostRecord?
 		fun saveSettings(host: String, address: Int?, login: String?)
+		fun registerHost(host: String, address: Int, login: String): Boolean
 		fun hostSelected(host: String, address: Int, login: String)
 		fun getChangesTracker(): ChangesTracker
 		fun getInitializer(): InitConnTask
