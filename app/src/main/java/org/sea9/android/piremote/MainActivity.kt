@@ -1,11 +1,11 @@
 package org.sea9.android.piremote
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
+import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.support.v7.app.AppCompatActivity
@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity(),
 				if (progressBar.visibility == View.INVISIBLE) { // is not busy
 					retainedContext.hostAdaptor2.getItem(position)?.let {
 						Log.w(TAG, "Spinner Item Selected!!!!!")
-						hostSelected(it.host, it.address, it.login)
+						hostSelected(it.host)
 					}
 				}
 			}
@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity(),
 
 		ibSett = findViewById(R.id.action_settings)
 		ibSett.setOnClickListener {
+			isBusy(true)
 			ConfigDialog.getInstance().show(supportFragmentManager, ConfigDialog.TAG)
 		}
 		ibUndo = findViewById(R.id.action_undo)
@@ -305,6 +306,9 @@ class MainActivity : AppCompatActivity(),
 	/*===========================================================
 	 * @see org.sea9.android.piremote.conf.ConfigDialog.Callback
 	 */
+	/**
+	 * Used when a host is selected in the Config Dialog. Not yet confirm thus not updating currentHost here.
+	 */
 	override fun selectHost(host: String?): HostRecord? {
 		return (host ?: retainedContext.currentHost?.host)?.let {
 			return DbContract.Host.get(retainedContext.dbHelper!!, it)
@@ -313,36 +317,26 @@ class MainActivity : AppCompatActivity(),
 		}
 	}
 
-	@SuppressLint("SetTextI18n")
-	override fun saveSettings(host: String, address: Int?, login: String?) {
+	override fun saveSettings(host: String, address: Int?, login: String?): Boolean {
+		var type = false //false - add; true - update
 		val ret = try {
 			(DbContract.Host.add(retainedContext.dbHelper!!, host, address!!, login!!) >= 0)
 		} catch (e: Exception) {
+			type = true
 			(DbContract.Host.modify(retainedContext.dbHelper!!, host, address, login) == 1)
 		}
 
 		if (ret) {
-			var addr = address
-			var user = login
-			if ((address == null) || (login == null)) {
-				DbContract.Host.get(retainedContext.dbHelper!!, host)?.let {
-					if (address == null) addr = it.address
-					if (login == null) user = it.login
-				}
-			}
-			if ((addr != null) && (user != null)) {
-				retainedContext.populate()
-				hostSelected(host, addr!!, user!!)
-			} else {
-				doNotify(MSG_DIALOG_NOTIFY, "ERROR! failed to retrieve host record of '$host'", true) //should not reach here...
-			}
+			retainedContext.populate()
+			hostSelected(host)
 		} else {
 			doNotify(MSG_DIALOG_NOTIFY, getString(R.string.message_savefail), true)
 		}
+		return type
 	}
 
 	override fun registerHost(host: String, address: Int, login: String): Boolean {
-		return if (DbContract.Host.registeredList(retainedContext.dbHelper!!, host).isNotEmpty()) {
+		return if (DbContract.Host.get(retainedContext.dbHelper!!, host)?.registered == true) {
 			false //Already registered
 		} else {
 			val bundle = Bundle()
@@ -357,9 +351,14 @@ class MainActivity : AppCompatActivity(),
 		}
 	}
 
-	override fun hostSelected(host: String, address: Int, login: String) {
-		retainedContext.onHostSelected(host, address, login)
-		retainedContext.initializer.connect(false)
+	/**
+	 * Used when a host selection is confirmed, thus will update currentHost.
+	 */
+	override fun hostSelected(host: String) {
+		retainedContext.onHostSelected(host)
+		Handler().postDelayed({
+			retainedContext.initializer.connect(false)
+		}, 200)
 	}
 
 	override fun getChangesTracker(): ChangesTracker {
@@ -401,8 +400,12 @@ class MainActivity : AppCompatActivity(),
 		if (bundle != null) {
 			val host = bundle.getString(KEY_HOST)
 			val user = bundle.getString(KEY_USR)
-			if ((host != null) && (user != null))
+			if ((host != null) && (user != null)) {
 				retainedContext.register.register(host, bundle.getInt(KEY_IP), user, secret)
+				Handler().postDelayed({
+					retainedContext.initializer.connect(false)
+				}, 200)
+			}
 		}
 	}
 }

@@ -51,7 +51,8 @@ object DbContract {
 								HostRecord(
 									getString(getColumnIndexOrThrow(COL_HOST)),
 									getInt(getColumnIndexOrThrow(COL_ADDRESS)),
-									getString(getColumnIndexOrThrow(COL_LOGIN))
+									getString(getColumnIndexOrThrow(COL_LOGIN)),
+									getString(getColumnIndexOrThrow(COL_PRIV)) != null
 								)
 							)
 						}
@@ -70,7 +71,8 @@ object DbContract {
 							return HostRecord(
 								url,
 								getInt(getColumnIndexOrThrow(COL_ADDRESS)),
-								getString(getColumnIndexOrThrow(COL_LOGIN))
+								getString(getColumnIndexOrThrow(COL_LOGIN)),
+								getString(getColumnIndexOrThrow(COL_PRIV)) != null
 							)
 						}
 					}
@@ -80,7 +82,7 @@ object DbContract {
 
 			fun getKey(helper: DbHelper, url: String): ByteArray? {
 				val cursor = helper.readableDatabase
-					.query(TABLE, COLUMNS, WHERE_URL, arrayOf(url), null, null, null)
+					.query(TABLE, COLUMNS, "$COL_PRIV is not null and $WHERE_URL", arrayOf(url), null, null, null)
 
 				var result: ByteArray? = null
 				cursor.use {
@@ -100,8 +102,6 @@ object DbContract {
 					put(COL_HOST, url)
 					put(COL_ADDRESS, ipa)
 					put(COL_LOGIN, usr)
-					putNull(COL_PRIV)
-					putNull(COL_INIT)
 					put(COMMON_MODF, Date().time)
 				}
 				return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)
@@ -118,8 +118,10 @@ object DbContract {
 						put(COL_LOGIN, usr)
 						count ++
 					}
-					putNull(COL_PRIV)
-					putNull(COL_INIT)
+					if (count > 0) {
+						putNull(COL_PRIV)
+						putNull(COL_INIT)
+					} // need to re-register if IP or login changed
 					put(COMMON_MODF, Date().time)
 				}
 
@@ -141,48 +143,7 @@ object DbContract {
 						put(COMMON_MODF, Date().time)
 					}
 					helper.writableDatabase.update(TABLE, newRow, WHERE_URL, arrayOf(url))
-				} ?: -1
-			}
-
-			@SuppressLint("Recycle")
-			fun registeredList(helper: DbHelper, url: String?): List<HostRecord> {
-				val cursor = if (url == null) {
-					helper.readableDatabase.query(
-						TABLE,
-						COLUMNS,
-						"$COL_PRIV is not null and $COL_PRIV <> ?",
-						arrayOf(EMPTY),
-						null,
-						null,
-						COL_HOST
-					)
-				} else {
-					helper.readableDatabase.query(
-						TABLE,
-						COLUMNS,
-						"$COL_PRIV is not null and $COL_PRIV <> ? and $WHERE_URL",
-						arrayOf(EMPTY, url),
-						null,
-						null,
-						COL_HOST
-					)
-				}
-
-				val result = mutableListOf<HostRecord>()
-				cursor.use {
-					with(it) {
-						while (moveToNext()) {
-							result.add(
-								HostRecord(
-									getString(getColumnIndexOrThrow(COL_HOST)),
-									getInt(getColumnIndexOrThrow(COL_ADDRESS)),
-									getString(getColumnIndexOrThrow(COL_LOGIN))
-								)
-							)
-						}
-					}
-				}
-				return result
+				} ?: -999
 			}
 		}
 	}

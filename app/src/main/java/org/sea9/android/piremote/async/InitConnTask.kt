@@ -131,10 +131,19 @@ class InitConnTask(private val caller: MainContext) {
 					caller.callback?.refreshUi()
 				}
 
-				val rec = HostRecord(result.hostName, result.address, result.login)
+				val rec = HostRecord(
+					result.hostName,
+					result.address,
+					result.login,
+					true
+				) //Should be registered if reach here...
 				caller.navigator.navigate(rec, null)
 				AsyncMeasureTask(caller, false)
 					.executeOnExecutor(THREAD_POOL_EXECUTOR, rec)
+			} else if (result.status == Status.UNREGISTERED) {
+				caller.writeConsole(caller.getString(R.string.message_unregister))
+				caller.callback?.refreshUi()
+				caller.callback?.isBusy(false)
 			} else if (search) {
 				caller.writeConsole(caller.getString(R.string.message_error, result.hostName, result.message))
 				caller.callback?.refreshUi()
@@ -167,7 +176,7 @@ class InitConnTask(private val caller: MainContext) {
 		}
 		override fun onPostExecute(result: HostRecord?) {
 			if (result != null) {
-				caller.onHostSelected(result.host, result.address, result.login)
+				caller.onHostSelected(result.host)
 				caller.writeConsole(caller.context?.getString(R.string.message_stored, result.host))
 				caller.navigator.navigate(result, null)
 				AsyncMeasureTask(caller, false)

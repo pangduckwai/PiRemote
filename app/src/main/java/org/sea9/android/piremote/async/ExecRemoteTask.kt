@@ -28,6 +28,17 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 	override fun doInBackground(vararg params: HostRecord): Response {
 		if (params.size != 1) throw RuntimeException("Invalid execute-command task")
 
+		if (!params[0].registered) {
+			return Response(
+				Status.UNREGISTERED,
+				params[0].host,
+				params[0].address,
+				params[0].login,
+				command,
+				exception = null
+			)
+		}
+
 		if (!NetworkUtils.getNetworkInfo(caller, false)) {
 			return Response(
 				Status.NO_WIFI,
@@ -143,7 +154,8 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 		CONNECTION_FAILED(-6),
 		TIMED_OUT(-7),
 		NO_WIFI(-8),
-		NO_DB_RECORD(-9)
+		NO_DB_RECORD(-9),
+		UNREGISTERED(-10)
 	}
 
 	data class Response (

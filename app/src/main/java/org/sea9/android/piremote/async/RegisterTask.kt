@@ -9,6 +9,7 @@ import com.jcraft.jsch.KeyPair
 import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.piremote.MainContext
 import org.sea9.android.piremote.NetworkUtils
+import org.sea9.android.piremote.R
 import org.sea9.android.piremote.data.DbContract
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
@@ -40,29 +41,37 @@ class RegisterTask(private val caller: MainContext) {
 				"&& echo \"$TRUE\" || echo \"$FALSE\""
 
 			AsyncRegisterTask(
-				caller, this, NetworkUtils.convert(address).hostAddress, login, password, command, outv.toByteArray()
+				caller, this, url, NetworkUtils.convert(address).hostAddress, login, password, command, outv.toByteArray()
 			).execute()
 		}
 	}
 
 	private class AsyncRegisterTask(
 		val caller: MainContext,
-		val jsch: JSch, val host: String, val login: String,
+		val jsch: JSch, val host: String, val address: String, val login: String,
 		val password: CharArray, val command: String, val key: ByteArray
 	): AsyncTask<Void, Void, String>() {
 		override fun onPostExecute(result: String) {
-			if (result == TRUE) {
-				if (DbContract.Host.registerHost(caller.dbHelper!!, host, key) == 1)
-					Log.w(TAG, "Successfully registered") //TODO
-				else
-					Log.w(TAG, "Registration failed")
+			if (result.contains(TRUE)) {
+				DbContract.Host.registerHost(caller.dbHelper!!, host, key).apply {
+					if (this == 1) {
+						caller.writeConsole(caller.context?.getString(R.string.message_register))
+					} else {
+						Log.w(TAG, "Register failed $host $this")
+						caller.writeConsole(caller.context?.getString(R.string.message_regfail))
+					}
+				}
+				caller.callback?.refreshUi()
+				caller.callback?.isBusy(false)
+			} else {
+				caller.writeConsole(caller.context?.getString(R.string.message_regfail))
 			}
 		}
 
 		override fun doInBackground(vararg params: Void?): String {
 			try {
 				var ret: String
-				jsch.getSession(login, host, 22).also { session ->
+				jsch.getSession(login, address, 22).also { session ->
 					session.setPassword(KryptoUtils.convert(password))
 					session.setConfig(Properties().also { prop ->
 						prop["StrictHostKeyChecking"] = "no"

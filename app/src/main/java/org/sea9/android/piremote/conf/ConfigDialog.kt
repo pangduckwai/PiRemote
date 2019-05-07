@@ -29,6 +29,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 		}
 	}
 
+	private lateinit var configLayout: View
 	private lateinit var textHost: AutoCompleteTextView
 	private lateinit var textAddr: EditText
 	private lateinit var textLogin: EditText
@@ -45,6 +46,8 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	@SuppressLint("ClickableViewAccessibility")
 	override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 		val layout = inflater.inflate(R.layout.config_dialog, container, false)
+
+		configLayout = layout.findViewById(R.id.config)
 
 		textHost = layout.findViewById(R.id.host)
 		callback?.getChangesTracker()?.register(textHost)
@@ -172,15 +175,18 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 					textLogin.text.toString()
 				} else
 					null
-//				val pwd = if (callback?.getChangesTracker()?.isChanged(textPassword) == true) {
-//					Log.w(TAG, "Password changed")
-//					CharArray(len).apply {
-//						textPassword.text.getChars(0, len, this, 0)
-//					}
-//				} else
-//					null
-				callback?.saveSettings(url, ipa, usr)
-				dismiss()
+
+				if (callback?.saveSettings(url, ipa, usr) == true)
+					dismiss()
+				else {
+					buttonSave.isEnabled = false
+					buttonRgst.isEnabled = true
+					callback?.getChangesTracker()?.clear()
+					(context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+						.hideSoftInputFromWindow(textLogin.windowToken, 0)
+
+					configLayout.requestFocus()
+				}
 			}
 		}
 
@@ -218,12 +224,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 		dialog.setOnKeyListener { _, keyCode, event ->
 			if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.action == KeyEvent.ACTION_UP)) {
 				if (callback?.getChangesTracker()?.isChanged(textHost) == true) {
-					val url = textHost.text.toString()
-					val ipa = NetworkUtils.compact(
-						NetworkUtils.parse(textAddr.text.toString())
-					)
-					val usr = textLogin.text.toString()
-					callback?.hostSelected(url, ipa, usr)
+					callback?.hostSelected(textHost.text.toString())
 				}
 				dismiss()
 				true
@@ -254,7 +255,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 			textAddr.setText(NetworkUtils.convert(it.address).hostAddress)
 			textLogin.setText(it.login)
 			buttonSave.isEnabled = false
-			buttonRgst.isEnabled = true
+			buttonRgst.isEnabled = !it.registered
 			callback?.getChangesTracker()?.clear()
 			if (host != callback?.getCurrent()?.host) callback?.getChangesTracker()?.change(textHost)
 			(context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
@@ -281,9 +282,9 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 	interface Callback {
 		fun doNotify(message: String?)
 		fun selectHost(host: String?): HostRecord?
-		fun saveSettings(host: String, address: Int?, login: String?)
+		fun saveSettings(host: String, address: Int?, login: String?): Boolean
 		fun registerHost(host: String, address: Int, login: String): Boolean
-		fun hostSelected(host: String, address: Int, login: String)
+		fun hostSelected(host: String)
 		fun getChangesTracker(): ChangesTracker
 		fun getInitializer(): InitConnTask
 		fun getCurrent(): HostRecord?

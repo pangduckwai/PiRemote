@@ -22,6 +22,7 @@ import java.net.InetAddress
 class MainContext: Fragment(), RetainedContext {
 	companion object {
 		const val TAG = "pi.retained"
+		val DUMMY = HostRecord("---", 0, "", false)
 
 		fun getInstance(sfm: FragmentManager, init: String): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -108,7 +109,8 @@ class MainContext: Fragment(), RetainedContext {
 	/*=================
 	 * Main UI related
 	 */
-	// Need 2 adapter because of stupid google's stupid array adapter.......
+	// Note: even if the data set are the same, still need 2 adapter, otherwise selecting one will
+	// affect the other... stupid google's stupid array adapter.......
 	lateinit var hostAdaptor1: ArrayAdapter<HostRecord> //For the AutoCompleteText
 		private set
 	lateinit var hostAdaptor2: ArrayAdapter<HostRecord> //For the Spinner
@@ -163,15 +165,16 @@ class MainContext: Fragment(), RetainedContext {
 	/*=================
 	 * Utility methods
 	 */
-	fun onHostSelected(host: String, address: Int, login: String) {
+	fun onHostSelected(host: String) {
 		context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let { prop ->
 			with(prop.edit()) {
 				putString(MainActivity.KEY_HOST, host) // Remember current selected host
 				apply()
 			}
 		}
-		currentHost = HostRecord(host, address, login)
+		currentHost = DbContract.Host.get(dbHelper!!, host)//HostRecord(host, address, login)
 		callback?.refreshUi()
+		Log.w(TAG, ">>>>>Current host: ${currentHost?.host} ${currentHost?.registered}")
 	}
 
 	fun populate() {
@@ -179,6 +182,7 @@ class MainContext: Fragment(), RetainedContext {
 		hostAdaptor1.clear()
 		hostAdaptor2.clear()
 		hostAdaptor1.addAll(list)
+		hostAdaptor2.add(DUMMY)
 		hostAdaptor2.addAll(list)
 
 		commands.populate()
