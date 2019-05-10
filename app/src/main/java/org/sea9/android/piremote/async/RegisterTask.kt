@@ -36,14 +36,16 @@ class RegisterTask(private val caller: MainContext) {
 
 			// 1. Create the .ssh/authorized_keys file if it not yet exists
 			// 2. Check if the SSH key (identified by the host entry name) already exists
-			// 3. If exists (denoted by the first '&&') use sed to replace the key
-			// 4. If not exists (denoted by the first '||') use echo to add the key
-			// 5. Finally check if the SSH key exists now
+			// 3. If exists (denoted by the first '&&') use sed to remove the old key
+			// 4. Remove the blank lines as well
+			// 5. Use echo to write the key
+			// 6. Finally check again if the SSH key exists
 			val command =
 				"mkdir -p /home/$login/.ssh; touch /home/$login/.ssh/authorized_keys; " +
 				"cat /home/$login/.ssh/authorized_keys | grep -q $url " +
-				"&& sed -i 's/^ssh..*${url}Y$/${outb.toString().trim()}X/g' /home/$login/.ssh/authorized_keys " +
-				"|| echo \"${outb.toString().trim()}Y\n\" >> /home/$login/.ssh/authorized_keys; " +
+				"&& sed -i '/^ssh..*$url$/d' /home/$login/.ssh/authorized_keys; " +
+				"sed -i '1{/^$/d;}' /home/$login/.ssh/authorized_keys; " +
+				"echo \"$outb\" >> /home/$login/.ssh/authorized_keys; " +
 				"cat /home/$login/.ssh/authorized_keys | grep -q $url " +
 				"&& echo \"$TRUE\" || echo \"$FALSE\""
 
@@ -59,6 +61,10 @@ class RegisterTask(private val caller: MainContext) {
 		val jsch: JSch, val host: String, val address: String, val login: String,
 		val password: CharArray, val command: String, val key: ByteArray
 	): AsyncTask<Void, Void, String>() {
+		override fun onPreExecute() {
+			caller.callback?.isBusy(true)
+		}
+
 		override fun onPostExecute(result: String) {
 			if (result.contains(TRUE)) {
 				DbContract.Host.registerHost(caller.dbHelper!!, host, key).apply {
