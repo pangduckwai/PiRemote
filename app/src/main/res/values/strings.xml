@@ -52,6 +52,7 @@
 	<string name="message_savefail">Update setting failed</string>
 	<string name="message_register">Host registered successfully</string>
 	<string name="message_regfail">Registering host failed</string>
+	<string name="message_saveregfail">Failed saving registration</string>
 	<string name="message_registered">Host already registered</string>
 	<string name="message_unregister">Host not yet registered</string>
 	<string name="message_login">Register as user \'%s\' to host \'%s\'</string>

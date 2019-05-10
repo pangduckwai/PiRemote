@@ -176,8 +176,8 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 				} else
 					null
 
-				if (callback?.saveSettings(url, ipa, usr) == true)
-					dismiss()
+				if (callback?.saveSettings(url, ipa, usr) != true)
+					dismiss() // Save setting failed
 				else {
 					buttonSave.isEnabled = false
 					buttonRgst.isEnabled = true
@@ -226,6 +226,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 				if (callback?.getChangesTracker()?.isChanged(textHost) == true) {
 					callback?.hostSelected(textHost.text.toString())
 				}
+				callback?.isBusy(false)
 				dismiss()
 				true
 			} else {
@@ -292,6 +293,7 @@ class ConfigDialog : DialogFragment(), AsyncResponse {
 		fun doLookup(url: String?, response: AsyncResponse)
 		fun readConfig(): Bundle?
 		fun updateConfig(config: Bundle?)
+		fun isBusy(flag: Boolean)
 	}
 	private var callback: Callback? = null
 

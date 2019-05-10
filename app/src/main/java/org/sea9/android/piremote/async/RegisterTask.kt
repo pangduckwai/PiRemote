@@ -1,6 +1,7 @@
 package org.sea9.android.piremote.async
 
 import android.os.AsyncTask
+import android.os.Handler
 import android.util.Log
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
@@ -33,16 +34,23 @@ class RegisterTask(private val caller: MainContext) {
 			val outb = ByteArrayOutputStream()
 			keypair.writePublicKey(outb, url)
 
+			// 1. Create the .ssh/authorized_keys file if it not yet exists
+			// 2. Check if the SSH key (identified by the host entry name) already exists
+			// 3. If exists (denoted by the first '&&') use sed to replace the key
+			// 4. If not exists (denoted by the first '||') use echo to add the key
+			// 5. Finally check if the SSH key exists now
 			val command =
 				"mkdir -p /home/$login/.ssh; touch /home/$login/.ssh/authorized_keys; " +
 				"cat /home/$login/.ssh/authorized_keys | grep -q $url " +
-				"|| echo \"$outb\" >> /home/$login/.ssh/authorized_keys; " +
+				"&& sed -i 's/^ssh..*${url}Y$/${outb.toString().trim()}X/g' /home/$login/.ssh/authorized_keys " +
+				"|| echo \"${outb.toString().trim()}Y\n\" >> /home/$login/.ssh/authorized_keys; " +
 				"cat /home/$login/.ssh/authorized_keys | grep -q $url " +
 				"&& echo \"$TRUE\" || echo \"$FALSE\""
 
 			AsyncRegisterTask(
 				caller, this, url, NetworkUtils.convert(address).hostAddress, login, password, command, outv.toByteArray()
 			).execute()
+			Log.w(TAG, command)
 		}
 	}
 
@@ -55,17 +63,23 @@ class RegisterTask(private val caller: MainContext) {
 			if (result.contains(TRUE)) {
 				DbContract.Host.registerHost(caller.dbHelper!!, host, key).apply {
 					if (this == 1) {
+						caller.populate()
+						caller.onHostSelected(host)
+						Handler().postDelayed({
+							caller.initializer.connect(false)
+						}, 100)
 						caller.writeConsole(caller.context?.getString(R.string.message_register))
 					} else {
 						Log.w(TAG, "Register failed $host $this")
-						caller.writeConsole(caller.context?.getString(R.string.message_regfail))
+						caller.writeConsole(caller.context?.getString(R.string.message_saveregfail))
+						caller.callback?.refreshUi()
 					}
 				}
-				caller.callback?.refreshUi()
-				caller.callback?.isBusy(false)
 			} else {
 				caller.writeConsole(caller.context?.getString(R.string.message_regfail))
+				caller.callback?.refreshUi()
 			}
+			caller.callback?.isBusy(false)
 		}
 
 		override fun doInBackground(vararg params: Void?): String {

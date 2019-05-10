@@ -318,21 +318,20 @@ class MainActivity : AppCompatActivity(),
 	}
 
 	override fun saveSettings(host: String, address: Int?, login: String?): Boolean {
-		var type = false //false - add; true - update
 		val ret = try {
 			(DbContract.Host.add(retainedContext.dbHelper!!, host, address!!, login!!) >= 0)
 		} catch (e: Exception) {
-			type = true
 			(DbContract.Host.modify(retainedContext.dbHelper!!, host, address, login) == 1)
 		}
 
-		if (ret) {
+		return if (ret) {
 			retainedContext.populate()
 			hostSelected(host)
+			true
 		} else {
 			doNotify(MSG_DIALOG_NOTIFY, getString(R.string.message_savefail), true)
+			false
 		}
-		return type
 	}
 
 	override fun registerHost(host: String, address: Int, login: String): Boolean {
@@ -402,9 +401,6 @@ class MainActivity : AppCompatActivity(),
 			val user = bundle.getString(KEY_USR)
 			if ((host != null) && (user != null)) {
 				retainedContext.register.register(host, bundle.getInt(KEY_IP), user, secret)
-				Handler().postDelayed({
-					retainedContext.initializer.connect(false)
-				}, 200)
 			}
 		}
 	}
