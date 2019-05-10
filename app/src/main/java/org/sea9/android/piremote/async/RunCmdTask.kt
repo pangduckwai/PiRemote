@@ -11,6 +11,7 @@ import org.sea9.android.piremote.R
 class RunCmdTask(private val caller: MainContext) {
 	companion object {
 		const val TAG = "pi.cmd"
+		const val SUDO = "sudo"
 		const val COMMAND_CD = "cd "
 		const val COMMAND_MK = "mkdir "
 		const val COMMAND_RM = "rm"
@@ -50,18 +51,27 @@ class RunCmdTask(private val caller: MainContext) {
 
 	//TODO filter command with the allowed command list
 	private fun execute(host: HostRecord, command: String, sudo: Boolean) {
+		val isSudo = sudo || command.startsWith(SUDO)
+		val cmd = if (isSudo) {
+			if (command.startsWith(SUDO))
+				"$SUDO -S -p 'SUDO Password' ${command.substring(SUDO.length)}"
+			else
+				"$SUDO -S -p 'SUDO Password' $command"
+		} else
+			command
+
 		when {
 			(command.startsWith(COMMAND_CD)) -> {
-				caller.navigator.navigate(host, command)
+				caller.navigator.navigate(host, cmd)
 			}
 			(command.startsWith(COMMAND_MK) ||
 			 command.startsWith(COMMAND_RM) ||
 			 command.startsWith(COMMAND_MV)) -> {
-				caller.navigator.execUpdateDir(command)
+				caller.navigator.execUpdateDir(cmd)
 			}
 			else -> {
 				lastCommand = command //Remember the last command regardless if it is a valid command
-				AsyncExecuteTask(caller, command, sudo).execute(host)
+				AsyncExecuteTask(caller, cmd, isSudo).execute(host)
 			}
 		}
 	}

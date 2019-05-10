@@ -6,6 +6,7 @@ import android.util.Log
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
+import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.piremote.*
 import org.sea9.android.piremote.data.DbContract
 import org.sea9.android.piremote.data.HostRecord
@@ -21,7 +22,6 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 		AsyncTask<HostRecord, Void, ExecRemoteTask.Response>() {
 	companion object {
 		const val TAG = "pi.exec_remote"
-		const val SUDO = "sudo"
 		const val EXPECTED = "sbin"
 	}
 
@@ -30,42 +30,18 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 
 		if (!params[0].registered) {
 			return Response(
-				Status.UNREGISTERED,
-				params[0].host,
-				params[0].address,
-				params[0].login,
-				command,
-				exception = null
+				Status.UNREGISTERED, params[0].host, params[0].address, params[0].login, command, exception = null
 			)
 		}
 
 		if (!NetworkUtils.getNetworkInfo(caller, false)) {
-			return Response(
-				Status.NO_WIFI,
-				params[0].host,
-				params[0].address,
-				params[0].login,
-				command,
-				exception = null
-			)
+			return Response(Status.NO_WIFI, params[0].host, params[0].address, params[0].login, command, exception = null)
 		}
 
 		val sshKey = DbContract.Host.getKey(caller.dbHelper!!, params[0].host) ?: return Response(
-			Status.NO_DB_RECORD,
-			params[0].host,
-			params[0].address,
-			params[0].login,
-			command,
-			exception = null
-		)
+			Status.NO_DB_RECORD, params[0].host, params[0].address, params[0].login, command, exception = null)
 
 		val address = NetworkUtils.convert(params[0].address).hostAddress
-
-		val isSudo = sudo || command.startsWith(SUDO)
-		val cmd = if (sudo && !command.startsWith(SUDO))
-			"$SUDO -S -p '' $command"
-		else
-			command
 
 		try {
 			var ret: String?
@@ -81,15 +57,12 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 
 				(session.openChannel("exec") as ChannelExec).also { channel ->
 					channel.setCommand(
-						(if (caller.commands.patchPath)
-							"export PATH=\$PATH:/$EXPECTED; $cmd"
-						else
-							cmd).also {
+						(if (caller.commands.patchPath) "export PATH=\$PATH:/$EXPECTED; $command" else command).also {
 							Log.w(TAG, "Actual command: $it")
 						}
 					)
 
-					val out = if (isSudo) channel.outputStream else null
+					val out = if (sudo) channel.outputStream else null
 
 					val err = ByteArrayOutputStream(1024)
 					channel.setErrStream(err)
@@ -98,10 +71,10 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 						channel.connect()
 
 						//TODO HERE - ask for password when SUDO
-//						if (isSudo) {
-//							out!!.write(KryptoUtils.convert(password + '\n'))
-//							out.flush()
-//						}
+						if (sudo) {
+							out!!.write(KryptoUtils.convert(charArrayOf('1','2','3','4','5','6','7','\n'))) //TODO TEMP
+							out.flush()
+						}
 
 						it.bufferedReader().use(BufferedReader::readText)
 					}
@@ -112,33 +85,15 @@ open class ExecRemoteTask(private val caller: MainContext, private val command: 
 				session.disconnect()
 			}
 			return if (xcp.isNullOrBlank()) {
-				Response(
-					Status.OKAY,
-					params[0].host,
-					params[0].address,
-					params[0].login,
-					command,
-					ret
-				)
+				Log.w(TAG, ret)
+				Response(Status.OKAY, params[0].host, params[0].address, params[0].login, command, ret)
 			} else {
-				Response(
-					Status.ERROR,
-					params[0].host,
-					params[0].address,
-					params[0].login,
-					command,
-					"$ret\n$xcp"
-				)
+				Log.w(TAG, "$ret\n$xcp")
+				Response(Status.ERROR, params[0].host, params[0].address, params[0].login, command, "$ret\n$xcp")
 			}
 		} catch (e: JSchException) {
 			Log.w(TAG, e.message)
-			return Response(
-				params[0].host,
-				params[0].address,
-				params[0].login,
-				command,
-				e
-			)
+			return Response(params[0].host, params[0].address, params[0].login, command, e)
 		} catch (e: Exception) {
 			throw RuntimeException(e)
 		}
